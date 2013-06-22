@@ -1,19 +1,19 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ConverterDatabase.cs" company="TODO">
-// TODO: Update copyright text.
+// <copyright file="ConverterDatabase.cs" company="jlkatz">
+// Copyright (c) 2013 Justin L Katz. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Octgn.Core.DataExtensionMethods;
 
 namespace MTGDeckConverter.Model
 {
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-
     /// <summary>
     /// Singleton object which contains the Octgn.Data.Game definition for MTG, a Dictionary of all the Sets
     /// available with the corresponding ConverterSet.  When first instantiated, it asynchronously fetches
@@ -30,18 +30,30 @@ namespace MTGDeckConverter.Model
 
         /// <summary>
         /// Prevents a default instance of the <see cref="ConverterDatabase"/> class from being created.
-        /// The database of all OCTGN card Name, Guid, Set, and MultiverseID info needs to be read in.
-        /// It only needs to be done once, which is why this is a Singleton.  
-        /// When this is instantiated, the database is read on a worker thread so the user can
-        /// immediately begin entering their deck info.
         /// </summary>
         private ConverterDatabase()
         {
-            this.GameDefinition = ConverterDatabase.GetGameDefinition();
+        }
+
+        /// <summary>
+        /// The database of all OCTGN card Name, Guid, Set, and MultiverseID info needs to be read in.
+        /// It only needs to be done once, which is why this is a Singleton.  
+        /// When Initialize is called, the database is read from the Controller on a worker thread so 
+        /// the user can immediately begin entering their deck info.
+        /// </summary>
+        /// <param name="mtgGame">The OCTGN Game to be used to build cards from.  It must be MTG.</param>
+        public void Initialize(Octgn.DataNew.Entities.Game mtgGame)
+        {
+            if (mtgGame == null)
+            {
+                throw new ArgumentNullException();
+            }
+
+            this.GameDefinition = mtgGame;
 
             if (this.GameDefinition != null)
             {
-                this._BuildCardDatabaseTask = Task.Factory.StartNew(() =>
+                this._BuildCardDatabaseTask = new Task(() =>
                 {
                     this.Sets = ConverterDatabase.BuildCardDatabase(this.GameDefinition);
                     this.IsInitialized = true;
@@ -53,9 +65,11 @@ namespace MTGDeckConverter.Model
                     (t) =>
                     {
                         this.BuildCardDatabaseExceptions = t.Exception;
-                    }, 
+                    },
                     System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted
                 );
+
+                this._BuildCardDatabaseTask.Start();
             }
         }
 
@@ -89,7 +103,7 @@ namespace MTGDeckConverter.Model
         /// <summary>
         /// Gets the OCTGN GameDefinition for MTG
         /// </summary>
-        public Octgn.Data.Game GameDefinition
+        public Octgn.DataNew.Entities.Game GameDefinition
         {
             get;
             private set;
@@ -117,12 +131,12 @@ namespace MTGDeckConverter.Model
         private bool _IsInitialized = false;
 
         /// <summary>
-        /// Gets or sets a value indicating whether the ConverterDatabase Singleton instance has finished initializing or not.
+        /// Gets a value indicating whether the ConverterDatabase Singleton instance has finished initializing or not.
         /// </summary>
         public bool IsInitialized
         {
             get { return this._IsInitialized; }
-            set { this.SetValue(ref this._IsInitialized, value, IsInitializedPropertyName); }
+            private set { this.SetValue(ref this._IsInitialized, value, IsInitializedPropertyName); }
         }
         
         /// <summary>
@@ -144,10 +158,26 @@ namespace MTGDeckConverter.Model
         /// <returns>A collection of Guids which represent Octgn Sets to be excluded.</returns>
         public IEnumerable<Guid> GetSetsExcludedFromSearches()
         {
-            return
-                from s in this.Sets
-                where !s.Value.IncludeInSearches
-                select s.Key;
+            if (this.IsInitialized)
+            {
+                return
+                    from s in this.Sets
+                    where !s.Value.IncludeInSearches
+                    select s.Key;
+            }
+            else
+            {
+                return new List<Guid>();
+            }
+        }
+
+        /// <summary>
+        /// Updates the SetsExcludedFromSearches collection to reflect the latest choices for excluded sets made by the user
+        /// </summary>
+        public void UpdateSetsExcludedFromSearches()
+        {
+            SettingsManager.SingletonInstance.SetsExcludedFromSearches.Clear();
+            SettingsManager.SingletonInstance.SetsExcludedFromSearches.AddRange(this.GetSetsExcludedFromSearches());
         }
 
         /// <summary>
@@ -177,54 +207,48 @@ namespace MTGDeckConverter.Model
         #region Static Helpers
 
         /// <summary>
-        /// Attempts to retrieve and return a reference to the MTG Game Definition.
-        /// </summary>
-        /// <returns>Octgn.Data.Game object for MTG if installed, null otherwise.</returns>
-        private static Octgn.Data.Game GetGameDefinition()
-        {
-            Octgn.Data.GamesRepository repo = new Octgn.Data.GamesRepository();
-            return repo.Games.FirstOrDefault(g => g.Id == Guid.Parse("A6C8D2E8-7CD8-11DD-8F94-E62B56D89593"));
-        }
-
-        /// <summary>
         /// Returns a Dictionary who's keys are Guids which represent Octgn Sets, and who's values are corresponding
         /// ConverterSet objects.  
         /// </summary>
         /// <param name="gameDefinition">The MTG Game Definition object to use to read sets from</param>
         /// <returns>A Dictionary of Octgn Set Guids and corresponding ConverterSet objects</returns>
-        private static Dictionary<Guid, ConverterSet> BuildCardDatabase(Octgn.Data.Game gameDefinition)
+        private static Dictionary<Guid, ConverterSet> BuildCardDatabase(Octgn.DataNew.Entities.Game gameDefinition)
         {
             if (gameDefinition == null)
             {
-                throw new ArgumentNullException(); 
+                throw new ArgumentNullException();
             }
+
+            Octgn.DataNew.Entities.PropertyDef multiverseIdPropertyDef = 
+                gameDefinition.CustomProperties.First(p => p.Name.Equals("MultiVerseId", StringComparison.InvariantCultureIgnoreCase));
 
             Dictionary<Guid, ConverterSet> sets = new Dictionary<Guid, ConverterSet>();
 
-            foreach (Octgn.Data.Set octgnSet in gameDefinition.Sets)
+            foreach (Octgn.DataNew.Entities.Set octgnSet in gameDefinition.Sets())
             {
                 sets[octgnSet.Id] = new ConverterSet(octgnSet);
-            }
+                foreach (Octgn.DataNew.Entities.Card card in octgnSet.Cards)
+                {
+                    // Try to dig the MultiverseID property out of the Octgn.DataNew.Entities.Card
+                    // During testing, all properties seemed nested under the first KeyValuePair in card.Properties
+                    int multiverseID = 0;
+                    if (card.Properties.Count > 0)
+                    {
+                        KeyValuePair<string, Octgn.DataNew.Entities.CardPropertySet> firstCardPropertyKVP = card.Properties.First();
+                        object multiverseIdString = null;
+                        if (firstCardPropertyKVP.Value.Properties.TryGetValue(multiverseIdPropertyDef, out multiverseIdString))
+                        {
+                            int.TryParse(multiverseIdString.ToString(), out multiverseID);
+                        }
+                    }
 
-            System.Data.DataTable allcards = gameDefinition.SelectCards(new string[] { "[Name] LIKE '%%'" });
-            System.Data.DataColumn cardIDColumn = allcards.Columns["id"];
-            System.Data.DataColumn setIDColumn = allcards.Columns["set_id"];
-            System.Data.DataColumn nameColumn = allcards.Columns["name"];
-            System.Data.DataColumn multiverseIDColumn = allcards.Columns["MultiverseId"];
-            foreach (System.Data.DataRow row in allcards.Rows)
-            {
-                Guid setGuid = Guid.Parse(row[setIDColumn].ToString());
-                Guid cardGuid = Guid.Parse(row[cardIDColumn].ToString());
-                string name = row[nameColumn].ToString().Trim();
-                int multiverseID = 0;
-                int.TryParse(row[multiverseIDColumn].ToString(), out multiverseID);
-
-                sets[setGuid].AddNewConverterCard
-                (
-                    cardGuid,
-                    name,
-                    multiverseID
-                );
+                    sets[octgnSet.Id].AddNewConverterCard
+                    (
+                        card.Id,
+                        card.Name,
+                        multiverseID
+                    );
+                }
             }
 
             foreach (KeyValuePair<Guid, ConverterSet> kvp in sets)
@@ -248,8 +272,7 @@ namespace MTGDeckConverter.Model
         public void Cleanup()
         {
             // Update the list of excluded sets before exiting
-            SettingsManager.SingletonInstance.SetsExcludedFromSearches.Clear();
-            SettingsManager.SingletonInstance.SetsExcludedFromSearches.AddRange(this.GetSetsExcludedFromSearches());
+            this.UpdateSetsExcludedFromSearches();
         }
     }
 }

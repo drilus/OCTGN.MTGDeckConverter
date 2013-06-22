@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="InlineDialogPage_ChooseAnotherCardVM.cs" company="TODO">
-// TODO: Update copyright text.
+// <copyright file="InlineDialogPage_ChooseAnotherCardVM.cs" company="jlkatz">
+// Copyright (c) 2013 Justin L Katz. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -86,7 +86,7 @@ namespace MTGDeckConverter.ViewModel
             {
                 if (this.SetValue(ref this._SelectedConverterCard, value, SelectedConverterCardPropertyName))
                 {
-                    this.RaisePropertyChanged(OkButtonEnabledPropertyName);
+                    this.OnPropertyChanged(OkButtonEnabledPropertyName);
 
                     this.SelectedConverterCardImage = this._MouseOverConverterCard == null ?
                         null :

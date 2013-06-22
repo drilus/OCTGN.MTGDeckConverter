@@ -16,7 +16,7 @@
         <Border
             Grid.Row="0"
             Margin="50"
-            Background="#F2F2F8"
+            Background="#33FFFFFF"
             Padding="25"
             >
             <TextBlock
@@ -57,6 +57,7 @@ OCTGN 2 (.o8d)"
                     VerticalAlignment="Center"
                     Command="{Binding Path=SelectDeckCommand.Command}" 
                     Content="Browse..." 
+                    MinHeight="25"
                     />
             </Grid>
         </GroupBox>

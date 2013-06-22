@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Style>
 
-    <Grid x:Name="containerGrid" Background="#9F000000" KeyboardNavigation.TabNavigation="Cycle">
+    <Grid x:Name="containerGrid" Background="#9FFFFFFF" KeyboardNavigation.TabNavigation="Cycle">
         <Grid.RowDefinitions>
             <RowDefinition Height=".15*"/>
             <RowDefinition Height="*"/>
@@ -46,7 +46,7 @@
             BorderBrush="#FF545963"
             SnapsToDevicePixels="True"
             FocusManager.IsFocusScope="True"
-            Background="White"
+            Background="#252525"
             >
 
             <Grid x:Name="OuterGrid">
@@ -69,7 +69,7 @@
                 <!-- CONTENT -->
                 <Border
                     Grid.Row="1"
-                    Padding="15,5,10,0"
+                    Padding="15,5,10,5"
                     >
                     <ContentPresenter
                         x:Name="PART_ContentPresenter"
@@ -82,7 +82,7 @@
                 <Border 
                     Grid.Row="2"
                     BorderThickness="0,1,0,0"
-                    BorderBrush="LightGray"
+                    BorderBrush="DarkGray"
                     >
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button 

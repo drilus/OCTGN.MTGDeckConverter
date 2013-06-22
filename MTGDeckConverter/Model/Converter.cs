@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Converter.cs" company="TODO">
-// TODO: Update copyright text.
+// <copyright file="Converter.cs" company="jlkatz">
+// Copyright (c) 2013 Justin L Katz. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Octgn.Core.DataExtensionMethods;
 
 namespace MTGDeckConverter.Model
 {
@@ -44,7 +45,7 @@ namespace MTGDeckConverter.Model
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
         private ConverterDeck _ConverterDeck;
-        
+
         /// <summary>
         /// Gets the ConverterDeck instance which stores data about the Deck to convert
         /// </summary>
@@ -56,10 +57,10 @@ namespace MTGDeckConverter.Model
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Property name constant")]
         private const string DeckFileNameWithoutExtensionPropertyName = "DeckFileNameWithoutExtension";
-        
+
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
-        private string _DeckFileNameWithoutExtension;
-        
+        private string _DeckFileNameWithoutExtension = string.Empty;
+
         /// <summary>
         /// Gets or sets the name of the Deck file without the file-extension
         /// </summary>
@@ -71,10 +72,10 @@ namespace MTGDeckConverter.Model
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Property name constant")]
         private const string DeckFullPathNamePropertyName = "DeckFullPathName";
-        
+
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
-        private string _DeckFullPathName;
-        
+        private string _DeckFullPathName = string.Empty;
+
         /// <summary>
         /// Gets or sets the Full Path Name of the Deck file to convert
         /// </summary>
@@ -88,8 +89,8 @@ namespace MTGDeckConverter.Model
         private const string DeckURLPropertyName = "DeckURL";
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
-        private string _DeckURL;
-        
+        private string _DeckURL = string.Empty;
+
         /// <summary>
         /// Gets or sets the URL of the Deck file to convert
         /// </summary>
@@ -103,8 +104,8 @@ namespace MTGDeckConverter.Model
         private const string MainDeckTextPropertyName = "MainDeckText";
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
-        private string _MainDeckText;
-        
+        private string _MainDeckText = string.Empty;
+
         /// <summary>
         /// Gets or sets the text which represents the cards in the Main Deck section of the Deck
         /// </summary>
@@ -118,8 +119,8 @@ namespace MTGDeckConverter.Model
         private const string SideBoardTextPropertyName = "SideBoardText";
 
         [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:ElementsMustBeDocumented", Justification = "Private backing field")]
-        private string _SideBoardText;
-        
+        private string _SideBoardText = string.Empty;
+
         /// <summary>
         /// Gets or sets the text which represents the cards in the Sideboard section of the deck
         /// </summary>
@@ -158,8 +159,8 @@ namespace MTGDeckConverter.Model
             }
 
             if (!this.DeckSourceType.HasValue)
-            { 
-                return new Tuple<bool, string>(false, "Deck Source has not been chosen"); 
+            {
+                return new Tuple<bool, string>(false, "Deck Source has not been chosen");
             }
 
             try
@@ -204,19 +205,29 @@ namespace MTGDeckConverter.Model
         /// <param name="fullPathName">The full path name of the location to save the converted deck.</param>
         public void SaveDeck(string fullPathName)
         {
-            Octgn.Data.Deck deck = new Octgn.Data.Deck(this.ConverterDatabase.GameDefinition);
+            this.CreateDeck().Save(this.ConverterDatabase.GameDefinition, fullPathName);
+        }
+
+        /// <summary>
+        /// Creates and returns an OCTGN format Deck who's contents are the cards which were converted in the Wizard.
+        /// </summary>
+        /// <returns>an OCTGN format Deck who's contents are the cards which were converted in the Wizard.</returns>
+        public Octgn.DataNew.Entities.Deck CreateDeck()
+        {
+            Octgn.DataNew.Entities.Deck deck = this.ConverterDatabase.GameDefinition.CreateDeck();
 
             // [0] = "Main"
             // [1] = "Sideboard"
             // [2] = "Command Zone"
             // [3] = "Planes/Schemes"
-            Octgn.Data.Deck.Section mainDeckSection = deck.Sections.First(s => s.Name.Equals("Main", StringComparison.InvariantCultureIgnoreCase));
-            Octgn.Data.Deck.Section sideboardSection = deck.Sections.First(s => s.Name.Equals("Sideboard", StringComparison.InvariantCultureIgnoreCase));
+            Octgn.DataNew.Entities.ISection mainDeckSection = deck.Sections.First(s => s.Name.Equals("Main", StringComparison.InvariantCultureIgnoreCase));
+            Octgn.DataNew.Entities.ISection sideboardSection = deck.Sections.First(s => s.Name.Equals("Sideboard", StringComparison.InvariantCultureIgnoreCase));
 
-            List<Tuple<Octgn.Data.Deck.Section, IEnumerable<ConverterMapping>>> pairSectionAndMappingsList = new List<Tuple<Octgn.Data.Deck.Section, IEnumerable<ConverterMapping>>>()
+            List<Tuple<Octgn.DataNew.Entities.ISection, IEnumerable<ConverterMapping>>> pairSectionAndMappingsList = 
+                new List<Tuple<Octgn.DataNew.Entities.ISection, IEnumerable<ConverterMapping>>>()
             {
-                new Tuple<Octgn.Data.Deck.Section, IEnumerable<ConverterMapping>>(mainDeckSection, this.ConverterDeck.MainDeck),
-                new Tuple<Octgn.Data.Deck.Section, IEnumerable<ConverterMapping>>(sideboardSection, this.ConverterDeck.SideBoard),
+                new Tuple<Octgn.DataNew.Entities.ISection, IEnumerable<ConverterMapping>>(mainDeckSection, this.ConverterDeck.MainDeck),
+                new Tuple<Octgn.DataNew.Entities.ISection, IEnumerable<ConverterMapping>>(sideboardSection, this.ConverterDeck.SideBoard),
             };
 
             foreach (var pair in pairSectionAndMappingsList)
@@ -225,20 +236,15 @@ namespace MTGDeckConverter.Model
                 {
                     if (converterMapping.SelectedOCTGNCard != null)
                     {
-                        pair.Item1.Cards.Add
-                        (
-                            new Octgn.Data.Deck.Element
-                            {
-                                Card = this.ConverterDatabase.GameDefinition.GetCardById(converterMapping.SelectedOCTGNCard.CardID),
-                                Quantity = (byte)converterMapping.Quantity
-                            }
-
-                        );
+                        Octgn.DataNew.Entities.Card octgnCard = this.ConverterDatabase.GameDefinition.AllCards().First(c => c.Id == converterMapping.SelectedOCTGNCard.CardID);
+                        Octgn.DataNew.Entities.MultiCard octgnMultiCard = octgnCard.ToMultiCard(converterMapping.Quantity);
+                        Octgn.DataNew.Entities.ISection octgnDeckSection = pair.Item1;
+                        octgnDeckSection.Cards.AddCard(octgnMultiCard);
                     }
                 }
             }
 
-            deck.Save(fullPathName);
+            return deck;
         }
 
         #endregion Public Methods

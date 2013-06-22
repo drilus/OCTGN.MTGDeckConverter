@@ -62,7 +62,7 @@
             <Border 
                 Grid.Row="2"
                 BorderThickness="0,1,0,0"
-                BorderBrush="LightGray"
+                BorderBrush="DarkGray"
                 >
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button
@@ -80,6 +80,13 @@
                         Command="{Binding Path=NextStepCommand.Command, UpdateSourceTrigger=PropertyChanged}"
                         Content="{Binding Path=NextStepCommand.DisplayName}"
                         Visibility="{Binding Path=CurrentWizardPageVM.ShowNextStepCommand, Converter={StaticResource BoolToVisibilityConverter}}"
+                        />
+                    <Button
+                        Margin="5,10,10,10"
+                        MinWidth="150"
+                        Height="30"
+                        Command="{Binding Path=CancelCommand.Command, UpdateSourceTrigger=PropertyChanged}"
+                        Content="{Binding Path=CancelCommand.DisplayName}"
                         />
                 </StackPanel>
             </Border>

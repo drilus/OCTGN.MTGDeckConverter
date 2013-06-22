@@ -14,7 +14,7 @@
         <Border
             Grid.Row="0"
             Margin="50"
-            Background="#F2F2F8"
+            Background="#33FFFFFF"
             Padding="25"
             >
             <TextBlock

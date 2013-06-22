@@ -8,6 +8,10 @@
     d:DesignHeight="300" d:DesignWidth="300"
     >
     <Grid>
-        <TextBlock Text="{Binding Path=Message}" TextWrapping="Wrap" />
+        <TextBox 
+            Text="{Binding Path=Message, Mode=OneWay}" 
+            TextWrapping="Wrap" 
+            IsReadOnly="True"
+            />
     </Grid>
 </UserControl>

@@ -11,8 +11,12 @@
     >
     <UserControl.Resources>
         <ResourceDictionary>
+            
             <!-- Workaround needed, see http://stackoverflow.com/a/8733564 -->
             <Style x:Key="ComboBoxCardMouseOverStyle" TargetType="{x:Type ComboBox}">
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                <Setter Property="SnapsToDevicePixels" Value="true" />
+                <Setter Property="Template" Value="{DynamicResource ComboBoxTemplate}" />
                 <EventSetter Event="MouseMove" Handler="ComboBox_MouseMove" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding Path=PotentialOCTGNCards.Count}" Value="0">
@@ -20,6 +24,7 @@
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
+
             <DataTemplate x:Key="CardListDataGrid">
                 <DataGrid
                     AutoGenerateColumns="False"
@@ -118,6 +123,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </DataTemplate>
+
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="CommandViewModel{T}.cs" company="TODO">
-// TODO: Update copyright text.
+// <copyright file="CommandViewModel{T}.cs" company="jlkatz">
+// Copyright (c) 2013 Justin L Katz. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="ImportDeckWizardPageVM.cs" company="TODO">
-// TODO: Update copyright text.
+// <copyright file="ImportDeckWizardPageVM.cs" company="jlkatz">
+// Copyright (c) 2013 Justin L Katz. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
@@ -15,7 +15,7 @@ namespace MTGDeckConverter.ViewModel
     /// <summary>
     /// A base class for all Wizard page ViewModels.  Provides navigation framework.
     /// </summary>
-    public abstract class ImportDeckWizardPageVM : PropertyChangedViewModelBase
+    public abstract class ImportDeckWizardPageVM : Model.INotifyPropertyChangedBase
     {
         /// <summary>
         /// Initializes a new instance of the ImportDeckWizardPageVM class.
